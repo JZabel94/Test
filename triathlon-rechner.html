@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Triathlon Rechner</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏊</text></svg>">
+  <link rel="stylesheet" href="triathlon-rechner.css">
+</head>
+<body>
+
+<div class="app" role="main">
+  <h1>Triathlon Rechner</h1>
+  <p>Zeit · Pace · Geschwindigkeit</p>
+
+  <div class="dist-grid" role="radiogroup" aria-label="Distanz wählen">
+    <button class="dist-btn active" data-dist="sprint"  role="radio" aria-checked="true"  autofocus>Sprint</button>
+    <button class="dist-btn"        data-dist="olympic" role="radio" aria-checked="false">Olympisch</button>
+    <button class="dist-btn"        data-dist="middle"  role="radio" aria-checked="false">Mittel</button>
+    <button class="dist-btn"        data-dist="long"    role="radio" aria-checked="false">Lang</button>
+  </div>
+
+  <section class="card" aria-label="Schwimmen">
+    <div class="card-header">
+      <h2><span class="icon">🏊</span> Schwimmen</h2>
+      <span class="dist-label" id="dist-swim">0.75 km</span>
+    </div>
+    <div class="mode-toggle" role="tablist">
+      <button class="mode-btn active" data-mode="time" data-sport="swim" role="tab" aria-selected="true">Zeit</button>
+      <button class="mode-btn"        data-mode="pace" data-sport="swim" role="tab" aria-selected="false">Pace (/100 m)</button>
+    </div>
+
+    <div class="input-group visible" data-mode-group="time" data-sport="swim">
+      <div class="input-row">
+        <div class="field-group">
+          <input type="number" min="0" max="99"   placeholder="hh"  data-sport="swim" data-part="h"  aria-label="Stunden">
+          <input type="number" min="0" max="59"   placeholder="mm"  data-sport="swim" data-part="m"  aria-label="Minuten">
+          <input type="number" min="0" max="59"   placeholder="ss"  data-sport="swim" data-part="s"  aria-label="Sekunden">
+        </div>
+        <span class="unit"></span>
+      </div>
+    </div>
+    <div class="input-group" data-mode-group="pace" data-sport="swim">
+      <div class="input-row">
+        <div class="field-group">
+          <input type="number" min="0" max="59"   placeholder="mm"  data-sport="swim" data-part="pm" aria-label="Pace Minuten">
+          <input type="number" min="0" max="59"   placeholder="ss"  data-sport="swim" data-part="ps" aria-label="Pace Sekunden">
+        </div>
+        <span class="unit">/100 m</span>
+      </div>
+    </div>
+
+    <div class="result" id="result-swim">
+      <span class="result-item"><span class="label">Zeit</span> <span class="value swim-c">—</span></span>
+      <span class="result-item"><span class="label">Pace</span> <span class="value swim-c">—</span></span>
+    </div>
+  </section>
+
+  <section class="card" aria-label="Wechselzone T1">
+    <div class="card-header">
+      <h2><span class="icon">🔄</span> T1</h2>
+      <span class="dist-label">Wechsel</span>
+    </div>
+    <div class="input-row">
+      <div class="field-group">
+        <input type="number" min="0" max="99"  placeholder="hh"  data-sport="t1" data-part="h" aria-label="Stunden">
+        <input type="number" min="0" max="59"  placeholder="mm"  data-sport="t1" data-part="m" aria-label="Minuten">
+        <input type="number" min="0" max="59"  placeholder="ss"  data-sport="t1" data-part="s" aria-label="Sekunden">
+      </div>
+      <span class="unit"></span>
+    </div>
+    <div class="result" id="result-t1">
+      <span class="result-item"><span class="label">Zeit</span> <span class="value t-c">—</span></span>
+    </div>
+  </section>
+
+  <section class="card" aria-label="Radfahren">
+    <div class="card-header">
+      <h2><span class="icon">🚴</span> Radfahren</h2>
+      <span class="dist-label" id="dist-bike">20 km</span>
+    </div>
+    <div class="mode-toggle" role="tablist">
+      <button class="mode-btn active" data-mode="time"  data-sport="bike" role="tab" aria-selected="true">Zeit</button>
+      <button class="mode-btn"        data-mode="speed" data-sport="bike" role="tab" aria-selected="false">Geschwindigkeit</button>
+    </div>
+
+    <div class="input-group visible" data-mode-group="time" data-sport="bike">
+      <div class="input-row">
+        <div class="field-group">
+          <input type="number" min="0" max="99"   placeholder="hh"  data-sport="bike" data-part="h"  aria-label="Stunden">
+          <input type="number" min="0" max="59"   placeholder="mm"  data-sport="bike" data-part="m"  aria-label="Minuten">
+          <input type="number" min="0" max="59"   placeholder="ss"  data-sport="bike" data-part="s"  aria-label="Sekunden">
+        </div>
+        <span class="unit"></span>
+      </div>
+    </div>
+    <div class="input-group" data-mode-group="speed" data-sport="bike">
+      <div class="input-row">
+        <div class="field-group">
+          <input type="number" min="0" max="99.9" step="0.1" placeholder="km/h"  data-sport="bike" data-part="v" aria-label="Geschwindigkeit km/h">
+        </div>
+        <span class="unit">km/h</span>
+      </div>
+    </div>
+
+    <div class="result" id="result-bike">
+      <span class="result-item"><span class="label">Zeit</span> <span class="value bike-c">—</span></span>
+      <span class="result-item"><span class="label">Ø Geschw.</span> <span class="value bike-c">—</span></span>
+    </div>
+  </section>
+
+  <section class="card" aria-label="Wechselzone T2">
+    <div class="card-header">
+      <h2><span class="icon">🔄</span> T2</h2>
+      <span class="dist-label">Wechsel</span>
+    </div>
+    <div class="input-row">
+      <div class="field-group">
+        <input type="number" min="0" max="99"  placeholder="hh"  data-sport="t2" data-part="h" aria-label="Stunden">
+        <input type="number" min="0" max="59"  placeholder="mm"  data-sport="t2" data-part="m" aria-label="Minuten">
+        <input type="number" min="0" max="59"  placeholder="ss"  data-sport="t2" data-part="s" aria-label="Sekunden">
+      </div>
+      <span class="unit"></span>
+    </div>
+    <div class="result" id="result-t2">
+      <span class="result-item"><span class="label">Zeit</span> <span class="value t-c">—</span></span>
+    </div>
+  </section>
+
+  <section class="card" aria-label="Laufen">
+    <div class="card-header">
+      <h2><span class="icon">🏃</span> Laufen</h2>
+      <span class="dist-label" id="dist-run">5 km</span>
+    </div>
+    <div class="mode-toggle" role="tablist">
+      <button class="mode-btn active" data-mode="time"  data-sport="run" role="tab" aria-selected="true">Zeit</button>
+      <button class="mode-btn"        data-mode="pace"  data-sport="run" role="tab" aria-selected="false">Pace (/km)</button>
+    </div>
+
+    <div class="input-group visible" data-mode-group="time" data-sport="run">
+      <div class="input-row">
+        <div class="field-group">
+          <input type="number" min="0" max="99"   placeholder="hh"  data-sport="run" data-part="h"  aria-label="Stunden">
+          <input type="number" min="0" max="59"   placeholder="mm"  data-sport="run" data-part="m"  aria-label="Minuten">
+          <input type="number" min="0" max="59"   placeholder="ss"  data-sport="run" data-part="s"  aria-label="Sekunden">
+        </div>
+        <span class="unit"></span>
+      </div>
+    </div>
+    <div class="input-group" data-mode-group="pace" data-sport="run">
+      <div class="input-row">
+        <div class="field-group">
+          <input type="number" min="0" max="59"   placeholder="mm"  data-sport="run" data-part="pm" aria-label="Pace Minuten">
+          <input type="number" min="0" max="59"   placeholder="ss"  data-sport="run" data-part="ps" aria-label="Pace Sekunden">
+        </div>
+        <span class="unit">/km</span>
+      </div>
+    </div>
+
+    <div class="result" id="result-run">
+      <span class="result-item"><span class="label">Zeit</span> <span class="value run-c">—</span></span>
+      <span class="result-item"><span class="label">Pace</span> <span class="value run-c">—</span></span>
+    </div>
+  </section>
+
+  <section class="card" id="summary" aria-label="Gesamtzeit">
+    <div class="card-header">
+      <h2><span class="icon">📊</span> Gesamtzeit</h2>
+      <span class="dist-label" id="dist-name">Sprint</span>
+    </div>
+
+    <div id="summary-rows">
+      <div class="empty-state">Werte eingeben für die Berechnung</div>
+    </div>
+
+    <div class="total-row" id="total-row" style="display:none;">
+      <span>🏁 Gesamt</span>
+      <span class="s-time" id="total-time">—</span>
+    </div>
+  </section>
+</div>
+
+<script src="triathlon-rechner.js"></script>
+</body>
+</html>
