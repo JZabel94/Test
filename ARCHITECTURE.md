@@ -173,7 +173,6 @@ input/click → update()
 | `click` | `.mode-btn[data-mode]` | Klasse umschalten, `.visible` togglen, `update()` |
 | `click` | `.dist-display` | Eingabemodus aktivieren (Input einblenden, fokussieren) |
 | `blur` / `keydown(Enter)` | `.dist-edit` | Wert in `customDists` speichern, `update()` |
-| `keydown(Escape)` | `.dist-edit` | Änderung verwerfen (`customDists[part] = null`), `update()` |
 
 - Initialer Aufruf `update()` nach Event-Registrierung (Startwert).
 

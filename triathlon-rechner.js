@@ -303,12 +303,6 @@
     input.addEventListener("blur", commit);
     input.addEventListener("keydown", function (e) {
       if (e.key === "Enter") { commit(); }
-      if (e.key === "Escape") {
-        customDists[part] = null;
-        display.style.display = "";
-        input.style.display = "none";
-        update();
-      }
     });
   }
 
