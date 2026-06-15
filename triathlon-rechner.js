@@ -16,6 +16,8 @@
   const totalTime  = document.getElementById("total-time");
   const distName   = document.getElementById("dist-name");
 
+  let customDists = { swim: null, bike: null, run: null };
+
   function pad2(n) { return String(n).padStart(2, "0"); }
 
   function fmtTime(sec) {
@@ -148,17 +150,28 @@
     const sel = document.querySelector(".dist-btn.active");
     if (!sel) return;
     const key = sel.dataset.dist;
-    const d = DISTANCES[key];
-    if (!d) return;
+    const base = DISTANCES[key];
+    if (!base) return;
 
-    document.getElementById("dist-swim").textContent = d.swim + " km";
-    document.getElementById("dist-bike").textContent = d.bike + " km";
-    document.getElementById("dist-run").textContent  = d.run  + " km";
-    distName.textContent = d.label;
+    const swimDist = customDists.swim !== null ? customDists.swim : base.swim;
+    const bikeDist = customDists.bike !== null ? customDists.bike : base.bike;
+    const runDist  = customDists.run  !== null ? customDists.run  : base.run;
+    const hasCustom = customDists.swim !== null || customDists.bike !== null || customDists.run !== null;
 
-    const swim = calcSwim(d.swim);
-    const bike = calcBike(d.bike);
-    const run  = calcRun(d.run);
+    document.getElementById("dist-swim").textContent = swimDist + " km";
+    document.getElementById("dist-bike").textContent = bikeDist + " km";
+    document.getElementById("dist-run").textContent  = runDist  + " km";
+    distName.textContent = hasCustom ? "\u270f\ufe0f Manuell" : base.label;
+
+    document.querySelectorAll(".dist-label-container").forEach(c => {
+      customDists[c.dataset.part] !== null
+        ? c.classList.add("is-custom")
+        : c.classList.remove("is-custom");
+    });
+
+    const swim = calcSwim(swimDist);
+    const bike = calcBike(bikeDist);
+    const run  = calcRun(runDist);
     const t1   = getT("t1");
     const t2   = getT("t2");
 
@@ -229,6 +242,8 @@
       });
       this.classList.add("active");
       this.setAttribute("aria-checked", "true");
+
+      customDists = { swim: null, bike: null, run: null };
       update();
     });
   });
@@ -257,6 +272,45 @@
       update();
     });
   });
+
+  document.querySelectorAll(".dist-label-container").forEach(initEdit);
+
+  function initEdit(container) {
+    const part = container.dataset.part;
+    const display = container.querySelector(".dist-display");
+    const input = container.querySelector(".dist-edit");
+
+    display.addEventListener("click", function () {
+      if (input.style.display !== "none") return;
+      const sel = document.querySelector(".dist-btn.active");
+      const base = sel ? DISTANCES[sel.dataset.dist] : null;
+      const standardVal = base ? base[part] : 0;
+      input.value = customDists[part] !== null ? customDists[part] : standardVal;
+      display.style.display = "none";
+      input.style.display = "";
+      input.focus();
+      input.select();
+    });
+
+    function commit() {
+      const val = getNumVal(input);
+      customDists[part] = val;
+      display.style.display = "";
+      input.style.display = "none";
+      update();
+    }
+
+    input.addEventListener("blur", commit);
+    input.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") { commit(); }
+      if (e.key === "Escape") {
+        customDists[part] = null;
+        display.style.display = "";
+        input.style.display = "none";
+        update();
+      }
+    });
+  }
 
   update();
 })();

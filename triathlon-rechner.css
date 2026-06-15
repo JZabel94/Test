@@ -95,13 +95,46 @@ body {
   align-items: center;
   gap: 6px;
 }
-.card-header .dist-label {
+.card-header .dist-label-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.card-header .dist-display {
   font-size: 0.8rem;
   color: var(--muted);
   background: var(--bg);
   padding: 2px 10px;
   border-radius: 20px;
   font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+  user-select: none;
+}
+.card-header .dist-display:hover {
+  background: #d1d5db !important;
+}
+.card-header .dist-edit {
+  width: 72px;
+  padding: 2px 6px;
+  border: 2px solid #0d6efd;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  text-align: center;
+  outline: none;
+  background: #fff;
+  color: var(--text);
+  font-weight: 500;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+.card-header .dist-edit::-webkit-outer-spin-button,
+.card-header .dist-edit::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+}
+.dist-label-container.is-custom .dist-display {
+  background: #fff3cd !important;
+  color: #856404 !important;
 }
 .card-header .icon {
   font-size: 1.3rem;

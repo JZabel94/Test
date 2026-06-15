@@ -23,7 +23,14 @@
   <section class="card" aria-label="Schwimmen">
     <div class="card-header">
       <h2><span class="icon">🏊</span> Schwimmen</h2>
-      <span class="dist-label" id="dist-swim">0.75 km</span>
+      <span class="dist-label-container" data-part="swim">
+        <span class="dist-display" id="dist-swim">0.75 km</span>
+        <input class="dist-edit" id="dist-edit-swim"
+               type="number" min="0" step="0.1"
+               data-sport="dist" data-part="swim"
+               aria-label="Schwimmen Distanz km"
+               style="display:none">
+      </span>
     </div>
     <div class="mode-toggle" role="tablist">
       <button class="mode-btn active" data-mode="time" data-sport="swim" role="tab" aria-selected="true">Zeit</button>
@@ -77,7 +84,14 @@
   <section class="card" aria-label="Radfahren">
     <div class="card-header">
       <h2><span class="icon">🚴</span> Radfahren</h2>
-      <span class="dist-label" id="dist-bike">20 km</span>
+      <span class="dist-label-container" data-part="bike">
+        <span class="dist-display" id="dist-bike">20 km</span>
+        <input class="dist-edit" id="dist-edit-bike"
+               type="number" min="0" step="0.1"
+               data-sport="dist" data-part="bike"
+               aria-label="Radfahren Distanz km"
+               style="display:none">
+      </span>
     </div>
     <div class="mode-toggle" role="tablist">
       <button class="mode-btn active" data-mode="time"  data-sport="bike" role="tab" aria-selected="true">Zeit</button>
@@ -130,7 +144,14 @@
   <section class="card" aria-label="Laufen">
     <div class="card-header">
       <h2><span class="icon">🏃</span> Laufen</h2>
-      <span class="dist-label" id="dist-run">5 km</span>
+      <span class="dist-label-container" data-part="run">
+        <span class="dist-display" id="dist-run">5 km</span>
+        <input class="dist-edit" id="dist-edit-run"
+               type="number" min="0" step="0.1"
+               data-sport="dist" data-part="run"
+               aria-label="Laufen Distanz km"
+               style="display:none">
+      </span>
     </div>
     <div class="mode-toggle" role="tablist">
       <button class="mode-btn active" data-mode="time"  data-sport="run" role="tab" aria-selected="true">Zeit</button>

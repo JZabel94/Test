@@ -32,7 +32,7 @@ Jede Datei hat eine klar abgegrenzte Verantwortung. Es gibt **keine** vermischte
 ├── h1 + p (Kopfzeile)
 ├── .dist-grid (Distanz-Auswahl, 4 Buttons)
 ├── section.card (Schwimmen)
-│   ├── .card-header (Titel + Distanz-Label)
+│   ├── .card-header (Titel + .dist-label-container > .dist-display + .dist-edit)
 │   ├── .mode-toggle (Umschalter Zeit/Pace)
 │   ├── .input-group[data-mode-group="time"]
 │   │   └── .input-row > .field-group > input×3 (hh, mm, ss)
@@ -56,7 +56,7 @@ Jede Datei hat eine klar abgegrenzte Verantwortung. Es gibt **keine** vermischte
 |---|---|---|
 | `data-dist` | `sprint`, `olympic`, `middle`, `long` | Distanz-Auswahl |
 | `data-sport` | `swim`, `bike`, `run`, `t1`, `t2` | Sportart / Transition |
-| `data-part` | `h`, `m`, `s`, `pm`, `ps`, `v` | Eingabetyp (Stunden, Minuten, Sekunden, Pace-Min, Pace-Sek, Geschwindigkeit) |
+| `data-part` | `h`, `m`, `s`, `pm`, `ps`, `v`, `dist` | Eingabetyp (Stunden, Minuten, Sekunden, Pace-Min, Pace-Sek, Geschwindigkeit, Distanz) |
 | `data-mode` | `time`, `pace`, `speed` | Aktiver Eingabemodus einer Sportart |
 | `data-mode-group` | `time`, `pace`, `speed` | Gruppenzugehörigkeit eines Input-Blocks (Sichtbarkeit via CSS-Klasse `.visible`) |
 
@@ -65,7 +65,7 @@ Jede Datei hat eine klar abgegrenzte Verantwortung. Es gibt **keine** vermischte
 - Neue Sportart → neues `<section class="card">` nach gleichem Muster, eigenes `data-sport`.
 - Neue Distanz → Eintrag in `DISTANCES` + Button in `.dist-grid`.
 - Neue Eingabeart → neues `data-part` + Lesefunktion in JS.
-- Keine inline-style-Attribute verwenden; immer CSS-Klassen nutzen.
+- Inline-style-Attribute nur für initial versteckte Elemente (z. B. `style="display:none"` auf `.dist-edit`).
 
 ---
 
@@ -152,24 +152,28 @@ const DISTANCES = {
 ```
 input/click → update()
                 ├── selected distance → DISTANCES[key]
+                ├── customDists überschreibt DISTANCES[key] (wenn gesetzt)
                 ├── getActiveMode(sport) → "time" | "pace" | "speed"
                 ├── getTime(sport) / getSwimPace() / … → Rohwert
                 ├── calcSwim(dist) / calcBike / calcRun → Ergebnis
                 ├── fmtTime / fmtPace / fmtPaceSwim / fmtSpeed → Anzeige
-                └── DOM-Manipulation (Summary & Gesamt)
+                └── DOM-Manipulation (Summary & Gesamt, .is-custom-Klassen)
 ```
 
 - **Unidirektional**: Eingabe → `update()` → DOM schreiben.
-- Kein State außerhalb des DOMs, kein Zwei-Wege-Binding.
+- Minimaler State: `customDists` (Object `{ swim, bike, run }`) für manuell abweichende Distanzen.
 - `update()` ist die einzige Stelle, die das DOM verändert.
 
 ### 4.4 Event-System
 
 | Event | Quelle | Handler |
-|---|---|---|
-| `click` | `.dist-btn` | Klasse umschalten, `update()` |
+|---|---|---|---|
+| `click` | `.dist-btn` | Klasse umschalten, `customDists` zurücksetzen, `update()` |
 | `input` | `input[data-sport]` | `update()` |
 | `click` | `.mode-btn[data-mode]` | Klasse umschalten, `.visible` togglen, `update()` |
+| `click` | `.dist-display` | Eingabemodus aktivieren (Input einblenden, fokussieren) |
+| `blur` / `keydown(Enter)` | `.dist-edit` | Wert in `customDists` speichern, `update()` |
+| `keydown(Escape)` | `.dist-edit` | Änderung verwerfen (`customDists[part] = null`), `update()` |
 
 - Initialer Aufruf `update()` nach Event-Registrierung (Startwert).
 
@@ -195,12 +199,77 @@ Neuer Distanz-Typ:
 | `get<Sportart><Eingabe>()` | `getSwimPace()`, `getBikeSpeed()`, `getRunPace()` |
 | `calc<Sportart>(distKm)` | `calcSwim(distKm)`, `calcBike(distKm)`, `calcRun(distKm)` |
 | `fmt<Format>(wert)` | `fmtTime(sec)`, `fmtPace(secPerKm)`, `fmtSpeed(kmh)` |
-| `data-sport`-Werte | `swim`, `bike`, `run`, `t1`, `t2` |
-| `data-part`-Werte | `h`, `m`, `s`, `pm`, `ps`, `v` |
+| `data-sport`-Werte | `swim`, `bike`, `run`, `t1`, `t2`, `dist` |
+| `data-part`-Werte | `h`, `m`, `s`, `pm`, `ps`, `v`, `swim`, `bike`, `run` |
 
 ---
 
-## 5. Umgang mit Sonderzeichen
+## 5. Manuelle Distanzen (Custom Distances)
+
+### 5.1 Konzept
+
+Distanzen sind durch Klick auf das Distanz-Label in jeder Sport-Card direkt editierbar. Weicht eine Distanz vom Standardwert der gewählten Distanzklasse ab, wird das gelb hervorgehoben.
+
+### 5.2 State
+
+```js
+let customDists = { swim: null, bike: null, run: null };
+```
+
+- `null` bedeutet: Standardwert der aktuell gewählten Distanzklasse verwenden.
+- Ein Zahlenwert überschreibt die Standarddistanz für diese Disziplin.
+
+### 5.3 UI-Komponenten (je Disziplin)
+
+```html
+<span class="dist-label-container" data-part="swim">
+  <span class="dist-display" id="dist-swim">0.75 km</span>
+  <input class="dist-edit" type="number" data-sport="dist" data-part="swim" style="display:none">
+</span>
+```
+
+- `.dist-display` — Anzeige des aktuellen Werts, Klick startet Editiermodus.
+- `.dist-edit` — nummerisches Input-Feld, initial versteckt.
+
+### 5.4 Verhalten
+
+| Aktion | Effekt |
+|---|---|
+| Klick auf `.dist-display` | `.dist-edit` einblenden, fokussieren, aktuellen Wert vorausfüllen |
+| Enter / Blur im `.dist-edit` | Wert in `customDists[part]` speichern, `update()` aufrufen |
+| Escape im `.dist-edit` | `customDists[part] = null`, `update()` aufrufen (Standardwert wiederhergestellt) |
+| Klick auf Standard-Distanz-Button (Sprint etc.) | `customDists` wird auf `{ swim: null, bike: null, run: null }` zurückgesetzt |
+| `update()` mit aktivem `customDists` | `distName` zeigt "✏️ Manuell", Container erhält Klasse `.is-custom` (gelbes Label) |
+
+### 5.5 Datenfluss
+
+```
+Klick auf .dist-display → Edit-Modus
+  ├── Enter/Blur → customDists[part] = wert → update()
+  └── Escape    → customDists[part] = null → update()
+
+update():
+  ├── swimDist = customDists.swim ?? base.swim
+  ├── bikeDist = customDists.bike ?? base.bike
+  ├── runDist  = customDists.run  ?? base.run
+  ├── is-custom-Klasse setzen / entfernen
+  └── calcSwim(swimDist), calcBike(bikeDist), calcRun(runDist)
+```
+
+### 5.6 CSS-Indikator
+
+```css
+.dist-label-container.is-custom .dist-display {
+  background: #fff3cd;  /* gelb */
+  color: #856404;
+}
+```
+
+Die Klasse `.is-custom` wird von `update()` gesetzt, sobald für die entsprechende Disziplin ein manueller Wert in `customDists` hinterlegt ist.
+
+---
+
+## 6. Umgang mit Sonderzeichen
 
 - Javascript verwendet Unicode-Escapes (`\u2014`, `\u{1F3CA}`) statt roher Emojis/UTF-8 in Strings, um Kodierungsprobleme zu vermeiden.
 - HTML enthält rohe Emojis – das ist für UTF-8-Dokumente unproblematisch.
@@ -208,7 +277,7 @@ Neuer Distanz-Typ:
 
 ---
 
-## 6. Accessibility (Barrierefreiheit)
+## 7. Accessibility (Barrierefreiheit)
 
 - `role="radiogroup"` + `role="radio"` + `aria-checked` für Distanz-Buttons.
 - `role="tablist"` + `role="tab"` + `aria-selected` für Mode-Umschalter.
