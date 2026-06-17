@@ -61,6 +61,7 @@
     <div class="result" id="result-swim">
       <span class="result-item"><span class="label">Zeit</span> <span class="value swim-c">—</span></span>
       <span class="result-item"><span class="label">Pace</span> <span class="value swim-c">—</span></span>
+      <button class="fuel-btn" data-ctx="normal-swim" title="Ernährungsstrategie">🍌</button>
     </div>
   </section>
 
@@ -121,6 +122,7 @@
     <div class="result" id="result-bike">
       <span class="result-item"><span class="label">Zeit</span> <span class="value bike-c">—</span></span>
       <span class="result-item"><span class="label">Ø Geschw.</span> <span class="value bike-c">—</span></span>
+      <button class="fuel-btn" data-ctx="normal-bike" title="Ernährungsstrategie">🍌</button>
     </div>
   </section>
 
@@ -182,6 +184,7 @@
     <div class="result" id="result-run">
       <span class="result-item"><span class="label">Zeit</span> <span class="value run-c">—</span></span>
       <span class="result-item"><span class="label">Pace</span> <span class="value run-c">—</span></span>
+      <button class="fuel-btn" data-ctx="normal-run" title="Ernährungsstrategie">🍌</button>
     </div>
   </section>
 
@@ -198,6 +201,7 @@
     <div class="total-row" id="total-row" style="display:none;">
       <span>🏁 Gesamt</span>
       <span class="s-time" id="total-time">—</span>
+      <button class="fuel-btn" data-ctx="normal" title="Ernährungsstrategie">🍌</button>
     </div>
   </section>
 
@@ -246,7 +250,7 @@
     <div class="prog-section">
       <h3 class="prog-subhead prog-swim">&#x1F3CA; Schwimmen</h3>
       <table class="prog-table" id="prog-swim-table">
-        <thead><tr><th>Distanz</th><th>Zeit</th><th>Pace</th></tr></thead>
+        <thead><tr><th>Distanz</th><th>Zeit</th><th>Pace</th><th></th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
@@ -254,7 +258,7 @@
     <div class="prog-section">
       <h3 class="prog-subhead prog-bike">&#x1F6B4; Radfahren</h3>
       <table class="prog-table" id="prog-bike-table">
-        <thead><tr><th>Distanz</th><th>Zeit</th><th>Speed</th><th>Leistung</th></tr></thead>
+        <thead><tr><th>Distanz</th><th>Zeit</th><th>Speed</th><th>Leistung</th><th></th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
@@ -262,7 +266,7 @@
     <div class="prog-section">
       <h3 class="prog-subhead prog-run">&#x1F3C3; Laufen</h3>
       <table class="prog-table" id="prog-run-table">
-        <thead><tr><th>Distanz</th><th>Zeit</th><th>Pace</th></tr></thead>
+        <thead><tr><th>Distanz</th><th>Zeit</th><th>Pace</th><th></th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
@@ -270,13 +274,24 @@
     <div class="prog-section">
       <h3 class="prog-subhead">&#x1F3C1; Triathlon</h3>
       <table class="prog-table" id="prog-tri-table">
-        <thead><tr><th>Distanz</th><th>Swim</th><th>Bike</th><th>Run</th><th>Gesamt</th></tr></thead>
+        <thead><tr><th>Distanz</th><th>Swim</th><th>Bike</th><th>Run</th><th>Gesamt</th><th></th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
   </section>
 </div>
 
+</div>
+
+<div id="fueling-modal" class="modal" style="display:none">
+  <div class="modal-backdrop"></div>
+  <div class="modal-panel">
+    <div class="modal-header">
+      <h3 id="fueling-title">🍌 Ernährungsstrategie</h3>
+      <button class="modal-close">&times;</button>
+    </div>
+    <div class="modal-body" id="fueling-body"></div>
+  </div>
 </div>
 
 <script src="triathlon-rechner.js"></script>

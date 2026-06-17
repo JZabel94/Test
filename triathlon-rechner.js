@@ -432,20 +432,36 @@
 
     tSwim.innerHTML = PROG_DISTS.swim.map(d => {
       const r = predictSwim(d);
-      return `<tr><td>${d} km</td><td>${r ? fmtTime(r.time) : "\u2014"}</td><td>${r ? fmtPaceSwimProg(r.pace) : "\u2014"}</td></tr>`;
+      return `<tr>
+        <td>${d} km</td>
+        <td>${r ? fmtTime(r.time) : "\u2014"}</td>
+        <td>${r ? fmtPaceSwimProg(r.pace) : "\u2014"}</td>
+        <td><button class="fuel-btn" data-ctx="prog-swim-${d}" ${r ? "" : "disabled"} title="Ern\u00e4hrungsstrategie">\u{1F34C}</button></td>
+      </tr>`;
     }).join("");
 
     tBike.innerHTML = PROG_DISTS.bike.map(d => {
       const r = predictBike(d);
-      return `<tr><td>${d} km</td><td>${r ? fmtTime(r.time) : "\u2014"}</td><td>${r ? fmtSpeed(r.speed) : "\u2014"}</td><td>${r ? fmtPower(r.power) : "\u2014"}</td></tr>`;
+      return `<tr>
+        <td>${d} km</td>
+        <td>${r ? fmtTime(r.time) : "\u2014"}</td>
+        <td>${r ? fmtSpeed(r.speed) : "\u2014"}</td>
+        <td>${r ? fmtPower(r.power) : "\u2014"}</td>
+        <td><button class="fuel-btn" data-ctx="prog-bike-${d}" ${r ? "" : "disabled"} title="Ern\u00e4hrungsstrategie">\u{1F34C}</button></td>
+      </tr>`;
     }).join("");
 
     tRun.innerHTML = PROG_DISTS.run.map(d => {
       const r = predictRun(d);
-      return `<tr><td>${d} km</td><td>${r ? fmtTime(r.time) : "\u2014"}</td><td>${r ? fmtPaceRun(r.pace) : "\u2014"}</td></tr>`;
+      return `<tr>
+        <td>${d} km</td>
+        <td>${r ? fmtTime(r.time) : "\u2014"}</td>
+        <td>${r ? fmtPaceRun(r.pace) : "\u2014"}</td>
+        <td><button class="fuel-btn" data-ctx="prog-run-${d}" ${r ? "" : "disabled"} title="Ern\u00e4hrungsstrategie">\u{1F34C}</button></td>
+      </tr>`;
     }).join("");
 
-    tTri.innerHTML = Object.values(TRI_DISTS).map(d => {
+    tTri.innerHTML = Object.entries(TRI_DISTS).map(([key, d]) => {
       const s = predictSwim(d.swim);
       const b = predictBike(d.bike);
       const r = predictRun(d.run);
@@ -457,6 +473,7 @@
         <td>${b ? fmtTime(b.time) : "\u2014"}</td>
         <td>${r ? fmtTime(r.time) : "\u2014"}</td>
         <td>${any && t > 0 ? fmtTime(t) : "\u2014"}</td>
+        <td><button class="fuel-btn" data-ctx="prog-tri-${key}" ${any ? "" : "disabled"} title="Ern\u00e4hrungsstrategie">\u{1F34C}</button></td>
       </tr>`;
     }).join("");
   }
@@ -473,6 +490,192 @@
   }
 
   progInputs.forEach(inp => inp.addEventListener("input", renderPrognose));
+
+  /* ─── FUELING ENGINE ─── */
+  function fmtDurationH(hours) {
+    if (hours == null || !isFinite(hours)) return "";
+    const totalMin = Math.round(hours * 60);
+    const h = Math.floor(totalMin / 60);
+    const m = totalMin % 60;
+    return h > 0 ? `(${h}:${pad2(m)} h)` : `(${m} min)`;
+  }
+
+  function getFuelingRate(sport, durationH, isTri) {
+    const triFactor = isTri ? (sport === "bike" ? 1.2 : 0.7) : 1.0;
+    let low = 0, high = 0;
+
+    if (sport === "bike") {
+      if (durationH < 0.5)      { low = 0;   high = 0; }
+      else if (durationH < 1)   { low = 0.3; high = 0.5; }
+      else if (durationH < 2)   { low = 0.9; high = 1.1; }
+      else if (durationH < 3)   { low = 1.2; high = 1.4; }
+      else if (durationH < 4)   { low = 1.4; high = 1.6; }
+      else                      { low = 1.6; high = 1.8; }
+    } else {
+      if (durationH < 0.5)      { low = 0;   high = 0; }
+      else if (durationH < 1)   { low = 0.15; high = 0.3; }
+      else if (durationH < 2)   { low = 0.5; high = 0.7; }
+      else if (durationH < 3)   { low = 0.7; high = 0.9; }
+      else                      { low = 0.9; high = 1.0; }
+    }
+
+    low  = +(low * triFactor).toFixed(2);
+    high = +(high * triFactor).toFixed(2);
+    return { low, high };
+  }
+
+  function calcFuelingSegment(sport, durationH, weightKg, isTri) {
+    if (sport === "swim") {
+      return { sport, durationH, note: "Keine Nahrungsaufnahme w\u00e4hrend des Schwimmens",
+        perHourMin: 0, perHourMax: 0, totalMin: 0, totalMax: 0 };
+    }
+    const rate = getFuelingRate(sport, durationH, isTri);
+    const perHourMin = Math.round(rate.low * weightKg);
+    const perHourMax = Math.round(rate.high * weightKg);
+    return { sport, durationH,
+      perHourMin, perHourMax,
+      totalMin: Math.round(perHourMin * durationH),
+      totalMax: Math.round(perHourMax * durationH),
+      perHourMinKg: rate.low, perHourMaxKg: rate.high };
+  }
+
+  function getExamples(sport) {
+    return sport === "bike"
+      ? "Energie-Gel, Riegel, Banane, Iso-Getr\u00e4nk, Gummib\u00e4rchen"
+      : "Energie-Gel, Iso-Getr\u00e4nk, Gummib\u00e4rchen (leicht verdaulich)";
+  }
+
+  function showFuelingModal(data) {
+    document.getElementById("fueling-title").textContent = data.title;
+    const body = document.getElementById("fueling-body");
+    let html = `<p class="fueling-weight">K\u00f6rpergewicht: <strong>${data.weight} kg</strong></p>`;
+
+    html += `<div class="fueling-section">
+      <h4>\u23F0 Vor dem Rennen (3\u20134 Stunden vorher)</h4>
+      <p class="fueling-rec"><strong>${data.preRace} g</strong> Kohlenhydrate (2 g/kg)</p>
+      <p class="fueling-examples">Haferflocken, Banane, Reiswaffeln, helles Brot, Nudeln</p>
+    </div>`;
+
+    for (const seg of data.segments) {
+      const icons = { swim: "\u{1F3CA}", bike: "\u{1F6B4}", run: "\u{1F3C3}" };
+      const labels = { swim: "Schwimmen", bike: "Radfahren", run: "Laufen" };
+      html += `<div class="fueling-section${seg.sport !== "swim" ? " fueling-" + seg.sport : ""}">
+        <h4>${icons[seg.sport] || ""} ${labels[seg.sport] || seg.sport} ${fmtDurationH(seg.durationH)}</h4>`;
+      if (seg.sport === "swim") {
+        html += `<p class="fueling-note">Keine Nahrungsaufnahme w\u00e4hrend des Schwimmens</p>`;
+      } else {
+        html += `<div class="fueling-row">
+          <span class="fueling-label">Gesamt</span>
+          <span class="fueling-val">${seg.totalMin}\u2013${seg.totalMax} g Kohlenhydrate</span>
+        </div>
+        <div class="fueling-row">
+          <span class="fueling-label">Pro Stunde</span>
+          <span class="fueling-val">${seg.perHourMin}\u2013${seg.perHourMax} g/h</span>
+        </div>
+        <p class="fueling-examples">${getExamples(seg.sport)}</p>`;
+      }
+      html += `</div>`;
+    }
+
+    html += `<div class="fueling-section">
+      <h4>\u2705 Nach dem Rennen (innerhalb 30 Minuten)</h4>
+      <p class="fueling-rec"><strong>${data.postRace} g</strong> Kohlenhydrate (1.2 g/kg) + Protein</p>
+      <p class="fueling-examples">Proteinshake, Schokoladenmilch, Recovery-Riegel, Banane</p>
+    </div>`;
+
+    body.innerHTML = html;
+    document.getElementById("fueling-modal").style.display = "flex";
+  }
+
+  function closeFuelingModal() {
+    document.getElementById("fueling-modal").style.display = "none";
+  }
+
+  function showFuelingFor(ctx) {
+    const weight = getProgVal("body", "weight") || 70;
+    let segments = [], title = "";
+
+    if (ctx === "normal") {
+      const key = document.querySelector(".dist-btn.active").dataset.dist;
+      const base = DISTANCES[key];
+      if (!base) return;
+      const swimDist = customDists.swim !== null ? customDists.swim : base.swim;
+      const bikeDist = customDists.bike !== null ? customDists.bike : base.bike;
+      const runDist  = customDists.run  !== null ? customDists.run  : base.run;
+      const swim = calcSwim(swimDist);
+      const bike = calcBike(bikeDist);
+      const run  = calcRun(runDist);
+      title = `Triathlon \u2013 ${base.label}`;
+      if (swim.time) segments.push(calcFuelingSegment("swim", swim.time / 3600, weight, true));
+      if (bike.time) segments.push(calcFuelingSegment("bike", bike.time / 3600, weight, true));
+      if (run.time)  segments.push(calcFuelingSegment("run",  run.time  / 3600, weight, true));
+
+    } else if (ctx.startsWith("normal-")) {
+      const sport = ctx.split("-")[1];
+      const key = document.querySelector(".dist-btn.active").dataset.dist;
+      const base = DISTANCES[key];
+      if (!base) return;
+      const dist = customDists[sport] !== null ? customDists[sport] : base[sport];
+      let result;
+      if (sport === "swim") result = calcSwim(dist);
+      else if (sport === "bike") result = calcBike(dist);
+      else if (sport === "run")  result = calcRun(dist);
+      if (!result || !result.time) return;
+      const labels = { swim: "Schwimmen", bike: "Radfahren", run: "Laufen" };
+      title = `${labels[sport]} \u2013 ${dist} km (${base.label})`;
+      segments.push(calcFuelingSegment(sport, result.time / 3600, weight, true));
+
+    } else if (ctx.startsWith("prog-")) {
+      const parts = ctx.split("-");
+      if (parts[1] === "tri") {
+        const triKey = parts[2];
+        const tri = TRI_DISTS[triKey];
+        if (!tri) return;
+        title = `Triathlon \u2013 ${tri.label}`;
+        const s = predictSwim(tri.swim);
+        const b = predictBike(tri.bike);
+        const r = predictRun(tri.run);
+        if (s) segments.push(calcFuelingSegment("swim", s.time / 3600, weight, true));
+        if (b) segments.push(calcFuelingSegment("bike", b.time / 3600, weight, true));
+        if (r) segments.push(calcFuelingSegment("run",  r.time  / 3600, weight, true));
+      } else {
+        const sport = parts[1];
+        const dist  = parseFloat(parts[2]);
+        const labels = { swim: "Schwimmen", bike: "Radfahren", run: "Laufen" };
+        title = `${labels[sport] || sport} \u2013 ${dist} km`;
+        let result;
+        if (sport === "swim") result = predictSwim(dist);
+        else if (sport === "bike") result = predictBike(dist);
+        else if (sport === "run")  result = predictRun(dist);
+        if (!result) return;
+        segments.push(calcFuelingSegment(sport, result.time / 3600, weight, false));
+      }
+    }
+
+    if (segments.length === 0) return;
+    const totalH = segments.reduce((s, seg) => s + seg.durationH, 0);
+    showFuelingModal({
+      title: "\u{1F34C} Ern\u00e4hrungsstrategie \u2013 " + title,
+      weight,
+      preRace: Math.round(weight * 2),
+      segments,
+      postRace: Math.round(weight * 1.2)
+    });
+  }
+
+  document.addEventListener("click", function (e) {
+    const btn = e.target.closest(".fuel-btn");
+    if (btn && btn.dataset.ctx && !btn.disabled) {
+      showFuelingFor(btn.dataset.ctx);
+    }
+    if (e.target.closest(".modal-close") || e.target.classList.contains("modal-backdrop")) {
+      closeFuelingModal();
+    }
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") closeFuelingModal();
+  });
 
   update();
 })();
