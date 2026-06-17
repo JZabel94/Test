@@ -243,8 +243,13 @@
       this.classList.add("active");
       this.setAttribute("aria-checked", "true");
 
-      customDists = { swim: null, bike: null, run: null };
-      update();
+      if (this.dataset.dist === "prognose") {
+        setPrognoseMode(true);
+      } else {
+        setPrognoseMode(false);
+        customDists = { swim: null, bike: null, run: null };
+        update();
+      }
     });
   });
 
@@ -305,6 +310,169 @@
       if (e.key === "Enter") { commit(); }
     });
   }
+
+  /* ─── PROGNOSE ─── */
+  const PROG_DISTS = {
+    swim: [0.4, 0.8, 1.5, 1.9, 3.8],
+    bike: [10, 20, 40, 90, 180],
+    run:  [5, 10, 21.1, 42.2]
+  };
+
+  const TRI_DISTS = {
+    sprint:  { swim: 0.75, bike: 20,  run: 5,    label: "Sprint" },
+    olympic: { swim: 1.5,  bike: 40,  run: 10,   label: "Olympisch" },
+    middle:  { swim: 1.9,  bike: 90,  run: 21.1, label: "Mittel" },
+    long:    { swim: 3.8,  bike: 180, run: 42.2, label: "Lang" }
+  };
+
+  const progInputs = document.querySelectorAll("[data-prog]");
+  const progView   = document.getElementById("prognose-view");
+  const normalCards = document.querySelectorAll("section.card:not(#prognose-settings):not(#prognose-results)");
+
+  function getProgVal(sport, part) {
+    const el = document.querySelector(`[data-prog="${sport}"][data-part="${part}"]`);
+    if (!el) return null;
+    const v = parseFloat(el.value);
+    return (!isNaN(v) && v >= 0) ? v : null;
+  }
+
+  function getProgPace(sport) {
+    const pm = getProgVal(sport, "pm");
+    const ps = getProgVal(sport, "ps");
+    if (pm === null && ps === null) return null;
+    return (pm || 0) * 60 + (ps || 0);
+  }
+
+  function riegel(refDist, refTime, tgtDist, exp) {
+    return refTime * Math.pow(tgtDist / refDist, exp || 1.06);
+  }
+
+  function predictSwim(distKm) {
+    const css = getProgPace("swim");
+    if (!css || css <= 0) return null;
+    const d1 = 360 / css;
+    const t = riegel(d1, 3600, distKm, 1.06);
+    return { time: t, pace: t / (distKm * 10) };
+  }
+
+  function predictRun(distKm) {
+    const tp = getProgPace("run");
+    if (!tp || tp <= 0) return null;
+    const d1 = 3600 / tp;
+    const t  = riegel(d1, 3600, distKm, 1.06);
+    return { time: t, pace: t / distKm };
+  }
+
+  function predictBike(distKm) {
+    const ftp    = getProgVal("bike", "ftp");
+    const weight = getProgVal("body", "weight") || 70;
+    if (!ftp || ftp <= 0) return null;
+
+    const totalMass = weight + 10;
+    const Wp  = 20000;
+    const rho = 1.2, cda = 0.30, crr = 0.004, g = 9.81;
+    const a = 0.5 * rho * cda;
+    const bCo = crr * totalMass * g;
+
+    function avgPwr(t) {
+      if (t <= 0) return ftp;
+      if (t <= 3600) return Math.min(Wp / t + ftp, ftp * 1.5);
+      return ftp * Math.pow(3600 / t, 0.07);
+    }
+
+    function speedFromPwr(p) {
+      let v = Math.pow(p / a, 1/3);
+      for (let i = 0; i < 30; i++) {
+        const f  = a * v * v * v + bCo * v - p;
+        const df = 3 * a * v * v + bCo;
+        v -= f / df;
+        if (Math.abs(f) < 0.001) break;
+      }
+      return v * 3.6;
+    }
+
+    let timeSec = (distKm / 35) * 3600;
+    for (let iter = 0; iter < 20; iter++) {
+      const p = avgPwr(timeSec);
+      const v = speedFromPwr(p);
+      if (v <= 0) return null;
+      const newTime = (distKm / v) * 3600;
+      if (Math.abs(newTime - timeSec) < 0.5) break;
+      timeSec = Math.max(newTime, 60);
+    }
+
+    const finalPwr = avgPwr(timeSec);
+    return { time: timeSec, speed: speedFromPwr(finalPwr), power: finalPwr };
+  }
+
+  function fmtPaceRun(sec) {
+    if (sec == null || !isFinite(sec) || sec < 0) return "\u2014";
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    return m > 0 ? `${m}:${pad2(s)} min/km` : `${s} s/km`;
+  }
+
+  function fmtPaceSwimProg(sec) {
+    if (sec == null || !isFinite(sec) || sec < 0) return "\u2014";
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    return `${m}:${pad2(s)} /100m`;
+  }
+
+  function fmtPower(w) {
+    if (w == null || !isFinite(w)) return "\u2014";
+    return `${Math.round(w)} W`;
+  }
+
+  function renderPrognose() {
+    const tSwim = document.querySelector("#prog-swim-table tbody");
+    const tBike = document.querySelector("#prog-bike-table tbody");
+    const tRun  = document.querySelector("#prog-run-table tbody");
+    const tTri  = document.querySelector("#prog-tri-table tbody");
+
+    tSwim.innerHTML = PROG_DISTS.swim.map(d => {
+      const r = predictSwim(d);
+      return `<tr><td>${d} km</td><td>${r ? fmtTime(r.time) : "\u2014"}</td><td>${r ? fmtPaceSwimProg(r.pace) : "\u2014"}</td></tr>`;
+    }).join("");
+
+    tBike.innerHTML = PROG_DISTS.bike.map(d => {
+      const r = predictBike(d);
+      return `<tr><td>${d} km</td><td>${r ? fmtTime(r.time) : "\u2014"}</td><td>${r ? fmtSpeed(r.speed) : "\u2014"}</td><td>${r ? fmtPower(r.power) : "\u2014"}</td></tr>`;
+    }).join("");
+
+    tRun.innerHTML = PROG_DISTS.run.map(d => {
+      const r = predictRun(d);
+      return `<tr><td>${d} km</td><td>${r ? fmtTime(r.time) : "\u2014"}</td><td>${r ? fmtPaceRun(r.pace) : "\u2014"}</td></tr>`;
+    }).join("");
+
+    tTri.innerHTML = Object.values(TRI_DISTS).map(d => {
+      const s = predictSwim(d.swim);
+      const b = predictBike(d.bike);
+      const r = predictRun(d.run);
+      const t = [s, b, r].reduce((a, x) => a + (x ? x.time : 0), 0);
+      const any = s || b || r;
+      return `<tr>
+        <td>${d.label}</td>
+        <td>${s ? fmtTime(s.time) : "\u2014"}</td>
+        <td>${b ? fmtTime(b.time) : "\u2014"}</td>
+        <td>${r ? fmtTime(r.time) : "\u2014"}</td>
+        <td>${any && t > 0 ? fmtTime(t) : "\u2014"}</td>
+      </tr>`;
+    }).join("");
+  }
+
+  function setPrognoseMode(on) {
+    if (on) {
+      normalCards.forEach(el => el.style.display = "none");
+      progView.style.display = "block";
+      renderPrognose();
+    } else {
+      normalCards.forEach(el => el.style.display = "");
+      progView.style.display = "none";
+    }
+  }
+
+  progInputs.forEach(inp => inp.addEventListener("input", renderPrognose));
 
   update();
 })();

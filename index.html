@@ -18,6 +18,7 @@
     <button class="dist-btn"        data-dist="olympic" role="radio" aria-checked="false">Olympisch</button>
     <button class="dist-btn"        data-dist="middle"  role="radio" aria-checked="false">Mittel</button>
     <button class="dist-btn"        data-dist="long"    role="radio" aria-checked="false">Lang</button>
+    <button class="dist-btn"        data-dist="prognose" role="radio" aria-checked="false">Prognose</button>
   </div>
 
   <section class="card" aria-label="Schwimmen">
@@ -199,6 +200,83 @@
       <span class="s-time" id="total-time">—</span>
     </div>
   </section>
+
+<div id="prognose-view" style="display:none">
+  <section class="card" id="prognose-settings">
+    <div class="card-header">
+      <h2><span class="icon">&#x1F52E;</span> Prognose-Einstellungen</h2>
+    </div>
+    <div class="prog-settings-grid">
+      <div class="prog-field">
+        <label>Schwelle Swim <span class="unit-label">(/100m)</span></label>
+        <div class="field-group">
+          <input type="number" min="0" max="59" placeholder="mm" data-prog="swim" data-part="pm">
+          <span class="prog-sep">:</span>
+          <input type="number" min="0" max="59" placeholder="ss" data-prog="swim" data-part="ps">
+        </div>
+      </div>
+      <div class="prog-field">
+        <label>Schwelle Bike <span class="unit-label">(Watt)</span></label>
+        <input type="number" min="0" max="999" placeholder="Watt" data-prog="bike" data-part="ftp" class="prog-single">
+      </div>
+      <div class="prog-field">
+        <label>Schwelle Run <span class="unit-label">(/km)</span></label>
+        <div class="field-group">
+          <input type="number" min="0" max="59" placeholder="mm" data-prog="run" data-part="pm">
+          <span class="prog-sep">:</span>
+          <input type="number" min="0" max="59" placeholder="ss" data-prog="run" data-part="ps">
+        </div>
+      </div>
+      <div class="prog-field">
+        <label>Gewicht <span class="unit-label">(kg)</span></label>
+        <input type="number" min="30" max="200" step="0.5" placeholder="kg" data-prog="body" data-part="weight" class="prog-single">
+      </div>
+      <div class="prog-field">
+        <label>Max. HF <span class="unit-label">(bpm)</span></label>
+        <input type="number" min="100" max="250" placeholder="bpm" data-prog="body" data-part="maxhr" class="prog-single">
+      </div>
+    </div>
+  </section>
+
+  <section class="card" id="prognose-results">
+    <div class="card-header">
+      <h2><span class="icon">&#x1F4C8;</span> Prognose</h2>
+    </div>
+
+    <div class="prog-section">
+      <h3 class="prog-subhead prog-swim">&#x1F3CA; Schwimmen</h3>
+      <table class="prog-table" id="prog-swim-table">
+        <thead><tr><th>Distanz</th><th>Zeit</th><th>Pace</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="prog-section">
+      <h3 class="prog-subhead prog-bike">&#x1F6B4; Radfahren</h3>
+      <table class="prog-table" id="prog-bike-table">
+        <thead><tr><th>Distanz</th><th>Zeit</th><th>Speed</th><th>Leistung</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="prog-section">
+      <h3 class="prog-subhead prog-run">&#x1F3C3; Laufen</h3>
+      <table class="prog-table" id="prog-run-table">
+        <thead><tr><th>Distanz</th><th>Zeit</th><th>Pace</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="prog-section">
+      <h3 class="prog-subhead">&#x1F3C1; Triathlon</h3>
+      <table class="prog-table" id="prog-tri-table">
+        <thead><tr><th>Distanz</th><th>Swim</th><th>Bike</th><th>Run</th><th>Gesamt</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
 </div>
 
 <script src="triathlon-rechner.js"></script>
