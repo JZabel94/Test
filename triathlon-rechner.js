@@ -412,16 +412,20 @@
 
   function predictBikeTri(distKm, swimTimeSec) {
     const base = predictBike(distKm);
-    if (!base) return null;
+    if (!base) { console.log("predictBikeTri: base is null for", distKm); return null; }
     const f = 1 + (swimTimeSec || 0) / 3600 * 0.008;
-    return { time: base.time * f, speed: base.speed / f, power: Math.round(base.power / f) };
+    const result = { time: base.time * f, speed: base.speed / f, power: Math.round(base.power / f) };
+    console.log("predictBikeTri", { distKm, swimTimeSec, baseTime: base.time, f, resultTime: result.time });
+    return result;
   }
 
   function predictRunTri(distKm, priorTimeSec) {
     const base = predictRun(distKm);
-    if (!base) return null;
+    if (!base) { console.log("predictRunTri: base is null for", distKm); return null; }
     const f = 1 + (priorTimeSec || 0) / 3600 * 0.035;
-    return { time: base.time * f, pace: base.pace * f, speed: base.speed / f };
+    const result = { time: base.time * f, pace: base.pace * f, speed: base.speed / f };
+    console.log("predictRunTri", { distKm, priorTimeSec, baseTime: base.time, f, resultTime: result.time });
+    return result;
   }
 
   function fmtPaceRun(sec) {
@@ -486,6 +490,7 @@
       const r = predictRunTri(d.run, (s ? s.time : 0) + (b ? b.time : 0));
       const t = [s, b, r].reduce((a, x) => a + (x ? x.time : 0), 0);
       const any = s || b || r;
+      console.log(`renderTri[${key}]`, { swimTime: s?.time, bikeTime: b?.time, runTime: r?.time, total: t });
       return `<tr>
         <td>${d.label}</td>
         <td>${s ? fmtTime(s.time) : "\u2014"}</td>
