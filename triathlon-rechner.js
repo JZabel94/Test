@@ -405,6 +405,25 @@
     return { time: timeSec, speed: speedFromPwr(finalPwr), power: finalPwr };
   }
 
+  /* ─── TRIATHLON-PROGNOSE (mit Ermüdung) ─── */
+  function predictSwimTri(distKm) {
+    return predictSwim(distKm);
+  }
+
+  function predictBikeTri(distKm, swimTimeSec) {
+    const base = predictBike(distKm);
+    if (!base) return null;
+    const f = 1 + (swimTimeSec || 0) / 3600 * 0.008;
+    return { time: base.time * f, speed: base.speed / f, power: Math.round(base.power / f) };
+  }
+
+  function predictRunTri(distKm, priorTimeSec) {
+    const base = predictRun(distKm);
+    if (!base) return null;
+    const f = 1 + (priorTimeSec || 0) / 3600 * 0.035;
+    return { time: base.time * f, pace: base.pace * f, speed: base.speed / f };
+  }
+
   function fmtPaceRun(sec) {
     if (sec == null || !isFinite(sec) || sec < 0) return "\u2014";
     const m = Math.floor(sec / 60);
@@ -462,9 +481,9 @@
     }).join("");
 
     tTri.innerHTML = Object.entries(TRI_DISTS).map(([key, d]) => {
-      const s = predictSwim(d.swim);
-      const b = predictBike(d.bike);
-      const r = predictRun(d.run);
+      const s = predictSwimTri(d.swim);
+      const b = predictBikeTri(d.bike, s ? s.time : 0);
+      const r = predictRunTri(d.run, (s ? s.time : 0) + (b ? b.time : 0));
       const t = [s, b, r].reduce((a, x) => a + (x ? x.time : 0), 0);
       const any = s || b || r;
       return `<tr>
@@ -632,9 +651,9 @@
         const tri = TRI_DISTS[triKey];
         if (!tri) return;
         title = `Triathlon \u2013 ${tri.label}`;
-        const s = predictSwim(tri.swim);
-        const b = predictBike(tri.bike);
-        const r = predictRun(tri.run);
+        const s = predictSwimTri(tri.swim);
+        const b = predictBikeTri(tri.bike, s ? s.time : 0);
+        const r = predictRunTri(tri.run, (s ? s.time : 0) + (b ? b.time : 0));
         if (s) segments.push(calcFuelingSegment("swim", s.time / 3600, weight, true));
         if (b) segments.push(calcFuelingSegment("bike", b.time / 3600, weight, true));
         if (r) segments.push(calcFuelingSegment("run",  r.time  / 3600, weight, true));
